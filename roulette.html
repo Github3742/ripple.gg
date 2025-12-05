@@ -27,7 +27,7 @@
         <div id="ball" class="ball"></div>
     </div>
 
-    <input type="number" id="bet" placeholder="Enter bet amount">
+    <input type="number" id="bet" class="bet-input" placeholder="Enter bet amount">
 
     <div class="choice-buttons">
         <button onclick="spin('red')">Red</button>
@@ -63,22 +63,32 @@ async function loadBalance() {
 
     const data = await res.json();
     if (data.success) {
-        currentBalance = data.balance;
-        document.getElementById("balanceDisplay").innerText =
-            "Balance: " + data.balance.toFixed(2);
+        renderBalance(data.balance);
     }
 }
 
 async function updateBalance(amount) {
     const username = localStorage.getItem("username");
+    if (!username) return { success: false };
 
-    await fetch("http://localhost:3000/updateBalance", {
+    const res = await fetch("http://localhost:3000/updateBalance", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ username, amount })
     });
 
-    loadBalance();
+    const data = await res.json();
+    if (data.success) {
+        renderBalance(data.balance);
+    }
+
+    return data;
+}
+
+function renderBalance(balance) {
+    currentBalance = Number(balance);
+    document.getElementById("balanceDisplay").innerText =
+        "Balance: " + currentBalance.toFixed(2);
 }
 
 // WHEEL DRAW --------------------------------------------------
@@ -115,14 +125,17 @@ function drawWheel() {
 }
 
 // MAIN SPIN ---------------------------------------------------
-function spin(choice) {
+async function spin(choice) {
     if (spinning) return;
 
     const bet = Number(document.getElementById("bet").value);
     if (!bet || bet <= 0) return setOutput("Enter valid bet");
     if (bet > currentBalance) return setOutput("Not enough balance");
 
-    updateBalance(-bet);
+    const deduction = await updateBalance(-bet);
+    if (!deduction?.success) {
+        return setOutput(deduction?.message || "Balance update failed");
+    }
 
     spinning = true;
 
