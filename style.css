@@ -188,10 +188,13 @@ button:hover {
 }
 
 #balanceDisplay {
-    padding-left: 35px;
-    margin-top: 20px;
+    margin: 20px auto 0;
+    padding: 0 20px;
     font-size: 20px;
+    font-weight: 600;
     opacity: 0.9;
+    text-align: center;
+    letter-spacing: 0.3px;
 }
 
 .dash-container {
@@ -226,6 +229,8 @@ button:hover {
 .game-container {
     padding: 40px;
     text-align: center;
+    max-width: 860px;
+    margin: 0 auto;
 }
 
 .game-container h1 {
@@ -247,6 +252,14 @@ button:hover {
 .choice-buttons button:hover {
     background: var(--accent-hover);
     transform: translateY(-2px);
+}
+
+.choice-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .crash-display h2 {
@@ -288,4 +301,12 @@ button:hover {
     margin-top: 20px;
     transition: 0.25s;
     font-size: 20px;
+}
+
+.bet-input {
+    max-width: 260px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    display: block;
 }

@@ -27,7 +27,7 @@
         <div id="crashMultiplier" class="crash-multi">1.00x</div>
     </div>
 
-    <input type="number" id="bet" placeholder="Enter bet amount">
+    <input type="number" id="bet" class="bet-input" placeholder="Enter bet amount">
 
     <div class="choice-buttons">
         <button onclick="startCrash()">Start</button>
@@ -63,23 +63,32 @@ async function loadBalance() {
 
     const data = await res.json();
     if (data.success) {
-        currentBalance = data.balance;
-        document.getElementById("balanceDisplay").innerText =
-            "Balance: " + data.balance.toFixed(2);
+        renderBalance(data.balance);
     }
 }
 
 async function updateBalance(amount) {
     const username = localStorage.getItem("username");
-    if (!username) return;
+    if (!username) return { success: false };
 
-    await fetch("http://localhost:3000/updateBalance", {
+    const res = await fetch("http://localhost:3000/updateBalance", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ username, amount })
     });
 
-    loadBalance();
+    const data = await res.json();
+    if (data.success) {
+        renderBalance(data.balance);
+    }
+
+    return data;
+}
+
+function renderBalance(balance) {
+    currentBalance = Number(balance);
+    document.getElementById("balanceDisplay").innerText =
+        "Balance: " + currentBalance.toFixed(2);
 }
 
 // GAME UI MESSAGES ---------------------------------------------------------
@@ -91,14 +100,17 @@ function setResult(text) {
 }
 
 // START CRASH ---------------------------------------------------------------
-function startCrash() {
+async function startCrash() {
     const bet = Number(document.getElementById("bet").value);
 
     if (!bet || bet <= 0) return setResult("Enter a valid bet");
     if (bet > currentBalance) return setResult("Not enough balance");
 
     currentBet = bet;
-    updateBalance(-bet);
+    const deduction = await updateBalance(-bet);
+    if (!deduction?.success) {
+        return setResult(deduction?.message || "Balance update failed");
+    }
 
     running = true;
     crashed = false;
@@ -115,12 +127,12 @@ function startCrash() {
 }
 
 // CASH OUT ---------------------------------------------------------------
-function cashOut() {
+async function cashOut() {
     if (!running || crashed || cashed) return;
 
     cashed = true;
     const profit = currentBet * (multiplier - 1);
-    updateBalance(currentBet + profit);
+    await updateBalance(currentBet + profit);
 
     flash("#00c86f55"); // green glow
     setResult("You cashed out at " + multiplier.toFixed(2) + "x");

@@ -22,7 +22,7 @@
 <div class="game-container">
     <h1>Mines</h1>
 
-    <input type="number" id="bet" placeholder="Enter bet amount">
+    <input type="number" id="bet" class="bet-input" placeholder="Enter bet amount">
     <button onclick="startMines()" class="start-btn">Start Game</button>
 
     <div id="minesGrid" class="mines-grid"></div>
@@ -48,31 +48,44 @@ async function loadBalance() {
 
     const data = await res.json();
     if (data.success) {
-        currentBalance = data.balance;
-        document.getElementById("balanceDisplay").innerText =
-            "Balance: " + data.balance.toFixed(2);
+        renderBalance(data.balance);
     }
 }
 
 async function updateBalance(amount) {
     const username = localStorage.getItem("username");
+    if (!username) return { success: false };
 
-    await fetch("http://localhost:3000/updateBalance", {
+    const res = await fetch("http://localhost:3000/updateBalance", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ username, amount })
     });
 
-    loadBalance();
+    const data = await res.json();
+    if (data.success) {
+        renderBalance(data.balance);
+    }
+
+    return data;
+}
+
+function renderBalance(balance) {
+    currentBalance = Number(balance);
+    document.getElementById("balanceDisplay").innerText =
+        "Balance: " + currentBalance.toFixed(2);
 }
 
 // START GAME --------------------------------------------------------
-function startMines() {
+async function startMines() {
     const bet = Number(document.getElementById("bet").value);
     if (!bet || bet <= 0) return output("Enter valid bet");
     if (bet > currentBalance) return output("Not enough balance");
 
-    updateBalance(-bet);
+    const deduction = await updateBalance(-bet);
+    if (!deduction?.success) {
+        return output(deduction?.message || "Balance update failed");
+    }
     currentBet = bet;
     gameActive = true;
     mines = new Set();
@@ -98,7 +111,7 @@ function buildGrid() {
 }
 
 // REVEAL TILE --------------------------------------------------------
-function reveal(tile) {
+async function reveal(tile) {
     if (!gameActive) return;
 
     const index = Number(tile.dataset.index);
@@ -113,7 +126,7 @@ function reveal(tile) {
     tile.classList.add("safe");
 
     const profit = currentBet * 0.15;
-    updateBalance(profit);
+    await updateBalance(profit);
     output("Safe tile + profit");
 }
 

@@ -95,22 +95,37 @@ app.post("/balance", (req, res) => {
 app.post("/updateBalance", (req, res) => {
     const { username, amount } = req.body;
 
-    db.run(
-        `UPDATE users
-         SET balance = balance + ?
-         WHERE username = ?
-         AND balance + ? >= 0`,
-        [amount, username, amount],
-        function (err) {
-            if (err) {
-                return res.json({ success: false, message: "Database error" });
-            }
-            if (this.changes === 0) {
-                return res.json({ success: false, message: "Insufficient balance" });
-            }
-            res.json({ success: true });
+    if (!username || typeof amount !== "number" || Number.isNaN(amount)) {
+        return res.json({ success: false, message: "Invalid balance update request" });
+    }
+
+    db.get(`SELECT balance FROM users WHERE username = ?`, [username], (err, user) => {
+        if (err) {
+            return res.json({ success: false, message: "Database error" });
         }
-    );
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+
+        const nextBalance = Number(user.balance) + amount;
+        if (nextBalance < 0) {
+            return res.json({ success: false, message: "Insufficient balance" });
+        }
+
+        db.run(
+            `UPDATE users
+             SET balance = ?
+             WHERE username = ?`,
+            [nextBalance, username],
+            err => {
+                if (err) {
+                    return res.json({ success: false, message: "Database error" });
+                }
+
+                res.json({ success: true, balance: nextBalance });
+            }
+        );
+    });
 });
 
 app.listen(3000, () => {

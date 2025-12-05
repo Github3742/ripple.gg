@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <input type="number" id="bet" placeholder="Enter bet amount">
+    <input type="number" id="bet" class="bet-input" placeholder="Enter bet amount">
 
     <div class="choice-buttons">
         <button onclick="playCF('Heads')">Heads</button>
@@ -51,29 +51,39 @@ async function loadBalance() {
     if (!username) return;
 
     const res = await fetch("http://localhost:3000/balance", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ username })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
     });
 
     const data = await res.json();
     if (data.success) {
-        currentBalance = data.balance;
-        document.getElementById("balanceDisplay").innerText =
-            "Balance: " + data.balance.toFixed(2);
+        renderBalance(data.balance);
     }
 }
 
 async function updateBalance(amount) {
     const username = localStorage.getItem("username");
+    if (!username) return { success: false };
 
-    await fetch("http://localhost:3000/updateBalance", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ username, amount })
+    const res = await fetch("http://localhost:3000/updateBalance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, amount })
     });
 
-    loadBalance();
+    const data = await res.json();
+    if (data.success) {
+        renderBalance(data.balance);
+    }
+
+    return data;
+}
+
+function renderBalance(balance) {
+    currentBalance = Number(balance);
+    document.getElementById("balanceDisplay").innerText =
+        "Balance: " + currentBalance.toFixed(2);
 }
 
 function setResult(text, win = null) {
@@ -93,7 +103,7 @@ function setResult(text, win = null) {
 }
 
 // PLAY -----------------------------------------------------------
-function playCF(choice) {
+async function playCF(choice) {
     if (flipping) return;
 
     const bet = Number(document.getElementById("bet").value);
@@ -101,7 +111,11 @@ function playCF(choice) {
     if (bet > currentBalance) return setResult("Not enough balance");
 
     flipping = true;
-    updateBalance(-bet);
+    const deduction = await updateBalance(-bet);
+    if (!deduction?.success) {
+        flipping = false;
+        return setResult(deduction?.message || "Balance update failed");
+    }
 
     const coin = document.getElementById("coin");
 
@@ -116,7 +130,7 @@ function playCF(choice) {
 
     setTimeout(() => {
         if (result === choice) {
-            updateBalance(bet * 2);
+            await updateBalance(bet * 2);
             setResult("You won (" + result + ")", true);
             coin.classList.add("win");
             setTimeout(() => coin.classList.remove("win"), 800);
