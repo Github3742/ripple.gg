@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mines</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body class="dashboard">
+
+<div class="navbar">
+    <img src="icon.png" class="logo">
+    <nav>Ripple Mines</nav>
+    <nav class="nav-links">
+        <a href="dashboard.html">Back</a>
+    </nav>
+</div>
+
+<h2 id="balanceDisplay" class="balance-top">Balance: ...</h2>
+
+<div class="game-container">
+    <h1>Mines</h1>
+
+    <input type="number" id="bet" placeholder="Enter bet amount">
+    <button onclick="startMines()" class="start-btn">Start Game</button>
+
+    <div id="minesGrid" class="mines-grid"></div>
+
+    <p id="minesResult"></p>
+</div>
+
+<script>
+let currentBalance = 0;
+let gameActive = false;
+let currentBet = 0;
+let mines = new Set();
+
+// LOAD BALANCE -----------------------------------------------------
+async function loadBalance() {
+    const username = localStorage.getItem("username");
+
+    const res = await fetch("http://localhost:3000/balance", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ username })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        currentBalance = data.balance;
+        document.getElementById("balanceDisplay").innerText =
+            "Balance: " + data.balance.toFixed(2);
+    }
+}
+
+async function updateBalance(amount) {
+    const username = localStorage.getItem("username");
+
+    await fetch("http://localhost:3000/updateBalance", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ username, amount })
+    });
+
+    loadBalance();
+}
+
+// START GAME --------------------------------------------------------
+function startMines() {
+    const bet = Number(document.getElementById("bet").value);
+    if (!bet || bet <= 0) return output("Enter valid bet");
+    if (bet > currentBalance) return output("Not enough balance");
+
+    updateBalance(-bet);
+    currentBet = bet;
+    gameActive = true;
+    mines = new Set();
+
+    while (mines.size < 5) mines.add(Math.floor(Math.random() * 25));
+
+    buildGrid();
+    output("Game started");
+}
+
+// BUILD GRID --------------------------------------------------------
+function buildGrid() {
+    const grid = document.getElementById("minesGrid");
+    grid.innerHTML = "";
+
+    for (let i = 0; i < 25; i++) {
+        const tile = document.createElement("div");
+        tile.className = "tile flip-tile";
+        tile.dataset.index = i;
+        tile.onclick = () => reveal(tile);
+        grid.appendChild(tile);
+    }
+}
+
+// REVEAL TILE --------------------------------------------------------
+function reveal(tile) {
+    if (!gameActive) return;
+
+    const index = Number(tile.dataset.index);
+
+    if (mines.has(index)) {
+        tile.classList.add("explode");
+        output("Mine hit. You lost.");
+        gameActive = false;
+        return;
+    }
+
+    tile.classList.add("safe");
+
+    const profit = currentBet * 0.15;
+    updateBalance(profit);
+    output("Safe tile + profit");
+}
+
+// OUTPUT --------------------------------------------------------------
+function output(text) {
+    const t = document.getElementById("minesResult");
+    t.innerText = text;
+    t.style.opacity = 1;
+    setTimeout(() => t.style.opacity = 0, 2500);
+}
+
+loadBalance();
+</script>
+
+<style>
+.flip-tile {
+    transition: transform 0.4s ease, background 0.3s;
+}
+
+.tile.safe {
+    background: #2d5cff !important;
+    transform: rotateY(180deg);
+    box-shadow: 0 0 12px #2d5cff;
+}
+
+.tile.explode {
+    background: #ff3b3b !important;
+    transform: scale(1.2);
+    box-shadow: 0 0 18px #ff3b3b;
+}
+</style>
+
+</body>
+</html>

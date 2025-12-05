@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripple Dashboard</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body class="dashboard">
+
+<div class="navbar">
+    <img src="icon.png" class="logo">
+    <nav>Ripple Dashboard</nav>
+    <nav class="nav-links">
+        <a href="index.html" onclick="logout()">Logout</a>
+    </nav>
+</div>
+
+<h2 id="balanceDisplay" class="balance-top">Balance: ...</h2>
+
+<div class="dash-container">
+    <h1>Welcome to Ripple</h1>
+    <p>Select a game to begin.</p>
+
+    <div class="cards">
+        <div class="card" onclick="location.href='coinflip.html'">Coinflip</div>
+        <div class="card" onclick="location.href='crash.html'">Crash</div>
+        <div class="card" onclick="location.href='roulette.html'">Roulette</div>
+        <div class="card" onclick="location.href='mines.html'">Mines</div>
+    </div>
+</div>
+
+<script>
+async function loadBalance() {
+    const username = localStorage.getItem("username");
+
+    if (!username) {
+        document.getElementById("balanceDisplay").innerText = "Balance: 0.00";
+        return;
+    }
+
+    const res = await fetch("http://localhost:3000/balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+    });
+
+    // If backend fails, do NOT leave "..."
+    if (!res.ok) {
+        document.getElementById("balanceDisplay").innerText = "Balance: 0.00";
+        return;
+    }
+
+    const data = await res.json();
+
+    if (data.success) {
+        document.getElementById("balanceDisplay").innerText =
+            "Balance: " + Number(data.balance).toFixed(2);
+    } else {
+        document.getElementById("balanceDisplay").innerText = "Balance: 0.00";
+    }
+}
+
+window.onload = loadBalance;
+</script>
+
+
+
+</body>
+</html>

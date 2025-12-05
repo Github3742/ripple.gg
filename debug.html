@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripple Balance Debug</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body class="dashboard">
+
+<div class="navbar">
+    <img src="icon.png" class="logo">
+    <nav>Balance Debug Panel</nav>
+    <nav class="nav-links">
+        <a href="dashboard.html">Back</a>
+    </nav>
+</div>
+
+<h2 id="balanceDisplay" style="padding-left: 25px;">Balance: ...</h2>
+
+<div class="game-container">
+    <h1>Balance Controls</h1>
+
+    <input type="number" id="amount" placeholder="Amount">
+
+    <div class="choice-buttons">
+        <button onclick="add()">Add Balance</button>
+        <button onclick="remove()">Remove Balance</button>
+        <button onclick="setBalance()">Set Balance</button>
+        <button onclick="reset()">Reset to 1000</button>
+    </div>
+
+    <p id="debugResult"></p>
+</div>
+
+<script>
+let currentBalance = 0;
+let username = null;
+
+async function loadBalance() {
+    username = localStorage.getItem("username");
+
+    const balanceEl = document.getElementById("balanceDisplay");
+
+    if (!username) {
+        balanceEl.innerText = "Balance: (no username in storage)";
+        return;
+    }
+
+    try {
+        const res = await fetch("http://localhost:3000/balance", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ username })
+        });
+
+        if (!res.ok) {
+            balanceEl.innerText = "Balance error: HTTP " + res.status;
+            return;
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+            currentBalance = Number(data.balance) || 0;
+            balanceEl.innerText = "Balance: " + currentBalance.toFixed(2);
+        } else {
+            balanceEl.innerText = "Balance error (no row)";
+        }
+    } catch (e) {
+        balanceEl.innerText = "Balance JS error: " + e.message;
+    }
+}
+
+async function changeBalance(delta) {
+    const msg = document.getElementById("debugResult");
+
+    if (!username) {
+        msg.innerText = "No username set, log in first.";
+        msg.style.opacity = 1;
+        return;
+    }
+
+    try {
+        const res = await fetch("http://localhost:3000/updateBalance", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ username, amount: delta })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            msg.innerText = "Update failed: " + (data.message || "unknown error");
+        } else {
+            msg.innerText = "Updated by " + delta;
+            await loadBalance();
+        }
+    } catch (e) {
+        msg.innerText = "Update JS error: " + e.message;
+    }
+
+    msg.style.opacity = 1;
+    setTimeout(() => msg.style.opacity = 0, 2000);
+}
+
+function add() {
+    const v = Number(document.getElementById("amount").value);
+    if (!v) return showQuick("Enter amount");
+    changeBalance(v);
+}
+
+function remove() {
+    const v = Number(document.getElementById("amount").value);
+    if (!v) return showQuick("Enter amount");
+    changeBalance(-v);
+}
+
+function setBalance() {
+    const v = Number(document.getElementById("amount").value);
+    if (isNaN(v)) return showQuick("Enter amount");
+
+    const delta = v - currentBalance;
+    changeBalance(delta);
+}
+
+function reset() {
+    const delta = 1000 - currentBalance;
+    changeBalance(delta);
+}
+
+function showQuick(text) {
+    const e = document.getElementById("debugResult");
+    e.innerText = text;
+    e.style.opacity = 1;
+    setTimeout(() => e.style.opacity = 0, 2000);
+}
+
+window.onload = loadBalance;
+</script>
+
+</body>
+</html>

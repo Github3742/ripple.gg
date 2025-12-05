@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coinflip</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body class="dashboard">
+
+<div class="navbar">
+    <img src="icon.png" class="logo">
+    <nav>Ripple Coinflip</nav>
+    <nav class="nav-links">
+        <a href="dashboard.html">Back</a>
+    </nav>
+</div>
+
+<h2 id="balanceDisplay" class="balance-top">Balance: ...</h2>
+
+<div class="game-container">
+
+    <h1>Coinflip</h1>
+
+    <div class="coin-wrapper">
+        <div id="coin" class="coin">
+            <div class="face front">Heads</div>
+            <div class="face back">Tails</div>
+        </div>
+    </div>
+
+    <input type="number" id="bet" placeholder="Enter bet amount">
+
+    <div class="choice-buttons">
+        <button onclick="playCF('Heads')">Heads</button>
+        <button onclick="playCF('Tails')">Tails</button>
+    </div>
+
+    <p id="cfResult"></p>
+
+</div>
+
+<script>
+let currentBalance = 0;
+let flipping = false;
+
+// LOAD BALANCE -----------------------------------------------------
+async function loadBalance() {
+    const username = localStorage.getItem("username");
+    if (!username) return;
+
+    const res = await fetch("http://localhost:3000/balance", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ username })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        currentBalance = data.balance;
+        document.getElementById("balanceDisplay").innerText =
+            "Balance: " + data.balance.toFixed(2);
+    }
+}
+
+async function updateBalance(amount) {
+    const username = localStorage.getItem("username");
+
+    await fetch("http://localhost:3000/updateBalance", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ username, amount })
+    });
+
+    loadBalance();
+}
+
+function setResult(text, win = null) {
+    const r = document.getElementById("cfResult");
+    r.innerText = text;
+    r.style.opacity = 1;
+
+    if (win === true) {
+        r.style.color = "#3aff8f";
+    } else if (win === false) {
+        r.style.color = "#ff3b3b";
+    } else {
+        r.style.color = "white";
+    }
+
+    setTimeout(() => r.style.opacity = 0, 2500);
+}
+
+// PLAY -----------------------------------------------------------
+function playCF(choice) {
+    if (flipping) return;
+
+    const bet = Number(document.getElementById("bet").value);
+    if (!bet || bet <= 0) return setResult("Enter valid bet");
+    if (bet > currentBalance) return setResult("Not enough balance");
+
+    flipping = true;
+    updateBalance(-bet);
+
+    const coin = document.getElementById("coin");
+
+    // Random result
+    const result = Math.random() < 0.5 ? "Heads" : "Tails";
+
+    // Decide final rotation
+    let flipRotation = result === "Heads" ? 1800 : 1980;
+
+    // Apply animation
+    coin.style.transform = `rotateY(${flipRotation}deg)`;
+
+    setTimeout(() => {
+        if (result === choice) {
+            updateBalance(bet * 2);
+            setResult("You won (" + result + ")", true);
+            coin.classList.add("win");
+            setTimeout(() => coin.classList.remove("win"), 800);
+        } else {
+            setResult("You lost (" + result + ")", false);
+            coin.classList.add("lose");
+            setTimeout(() => coin.classList.remove("lose"), 800);
+        }
+
+        flipping = false;
+        loadBalance();
+    }, 1800);
+}
+
+loadBalance();
+</script>
+
+<style>
+.coin-wrapper {
+    perspective: 1000px;
+    margin-bottom: 25px;
+}
+
+.coin {
+    width: 160px;
+    height: 160px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+    margin: auto;
+}
+
+.face {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    background: #1a1e2d;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    backface-visibility: hidden;
+}
+
+.front { transform: rotateY(0deg); }
+.back { transform: rotateY(180deg); }
+
+.coin.win { box-shadow: 0 0 20px #3aff8f; }
+.coin.lose { box-shadow: 0 0 20px #ff3b3b; }
+</style>
+
+</body>
+</html>

@@ -1,0 +1,291 @@
+/* GLOBAL ---------------------------------------------------- */
+
+:root {
+    --bg: #0b0e1a;
+    --card: #111628cc;
+    --nav: #111628;
+    --accent: #2d5cff;
+    --accent-hover: #2349d1;
+    --glass: rgba(255,255,255,0.05);
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: #fff;
+}
+
+/* NAVBAR ---------------------------------------------------- */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 30px;
+    background: var(--nav);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.logo {
+    height: 42px;
+    width: 42px;
+}
+
+.nav-links a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.nav-links a:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.nav-links .create {
+    background: var(--accent);
+}
+
+.nav-links .create:hover {
+    background: var(--accent-hover);
+}
+
+/* HERO LANDING PAGE --------------------------------------- */
+
+.hero {
+    text-align: center;
+    padding: 120px 20px 60px;
+}
+
+.hero h1 {
+    font-size: 60px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.hero p {
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+.cta {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 14px 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    font-size: 20px;
+    text-decoration: none;
+    color: white;
+    transition: 0.25s;
+}
+
+.cta:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+}
+
+/* FEATURE CARDS ------------------------------------------- */
+
+.features {
+    text-align: center;
+    padding: 40px 20px 80px;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    width: 80%;
+    margin: auto;
+}
+
+.feature-card {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(8px);
+    transition: 0.25s;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    background: #162043dd;
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    font-size: 22px;
+}
+
+/* LOGIN + REGISTER ----------------------------------------- */
+
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-container {
+    background: var(--card);
+    padding: 40px;
+    width: 330px;
+    border-radius: 18px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    background: #0d1120;
+    border: 1px solid #1f2740;
+    color: white;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+}
+
+.error-popup {
+    background: #ff3b3b;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* DASHBOARD ------------------------------------------------- */
+
+.dashboard {
+    min-height: 100vh;
+}
+
+#balanceDisplay {
+    padding-left: 35px;
+    margin-top: 20px;
+    font-size: 20px;
+    opacity: 0.9;
+}
+
+.dash-container {
+    padding: 40px;
+    text-align: center;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 25px;
+    padding: 40px;
+}
+
+.card {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: 0.25s;
+    font-size: 20px;
+    backdrop-filter: blur(6px);
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    background: #162043dd;
+}
+
+/* GAME PAGES ------------------------------------------------ */
+
+.game-container {
+    padding: 40px;
+    text-align: center;
+}
+
+.game-container h1 {
+    font-size: 38px;
+    margin-bottom: 20px;
+}
+
+.choice-buttons button {
+    margin: 10px;
+    padding: 12px 20px;
+    background: var(--accent);
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.choice-buttons button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+}
+
+.crash-display h2 {
+    font-size: 50px;
+    margin-bottom: 20px;
+}
+
+.roulette-wheel p {
+    font-size: 45px;
+}
+
+.mines-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 70px);
+    gap: 14px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.tile {
+    width: 70px;
+    height: 70px;
+    background: var(--glass);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.tile:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+#cfResult,
+#crashResult,
+#rouletteResult,
+#minesResult {
+    opacity: 0;
+    margin-top: 20px;
+    transition: 0.25s;
+    font-size: 20px;
+}

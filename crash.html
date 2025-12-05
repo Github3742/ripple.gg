@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body class="dashboard">
+
+<div class="navbar">
+    <img src="icon.png" class="logo">
+    <nav>Ripple</nav>
+    <nav class="nav-links">
+        <a href="dashboard.html">Back</a>
+    </nav>
+</div>
+
+<h2 id="balanceDisplay" class="balance-top">Balance: ...</h2>
+
+<div class="game-container">
+    <h1>Crash</h1>
+
+    <div class="crash-wrapper">
+        <canvas id="crashCanvas"></canvas>
+        <div id="crashMultiplier" class="crash-multi">1.00x</div>
+    </div>
+
+    <input type="number" id="bet" placeholder="Enter bet amount">
+
+    <div class="choice-buttons">
+        <button onclick="startCrash()">Start</button>
+        <button onclick="cashOut()">Cash Out</button>
+    </div>
+
+    <p id="crashResult"></p>
+</div>
+
+<script>
+let ctx, canvas;
+let running = false;
+let crashed = false;
+let cashed = false;
+let multiplier = 1.00;
+let tick = 0;
+let graphPoints = [];
+let crashPoint = null;
+
+let currentBalance = 0;
+let currentBet = 0;
+
+// LOAD BALANCE -------------------------------------------------------------
+async function loadBalance() {
+    const username = localStorage.getItem("username");
+    if (!username) return;
+
+    const res = await fetch("http://localhost:3000/balance", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        currentBalance = data.balance;
+        document.getElementById("balanceDisplay").innerText =
+            "Balance: " + data.balance.toFixed(2);
+    }
+}
+
+async function updateBalance(amount) {
+    const username = localStorage.getItem("username");
+    if (!username) return;
+
+    await fetch("http://localhost:3000/updateBalance", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username, amount })
+    });
+
+    loadBalance();
+}
+
+// GAME UI MESSAGES ---------------------------------------------------------
+function setResult(text) {
+    const box = document.getElementById("crashResult");
+    box.innerText = text;
+    box.style.opacity = 1;
+    setTimeout(() => (box.style.opacity = 0), 2500);
+}
+
+// START CRASH ---------------------------------------------------------------
+function startCrash() {
+    const bet = Number(document.getElementById("bet").value);
+
+    if (!bet || bet <= 0) return setResult("Enter a valid bet");
+    if (bet > currentBalance) return setResult("Not enough balance");
+
+    currentBet = bet;
+    updateBalance(-bet);
+
+    running = true;
+    crashed = false;
+    cashed = false;
+    multiplier = 1.00;
+    tick = 0;
+    graphPoints = [];
+    crashPoint = 1.0;
+
+    document.getElementById("crashMultiplier").innerText = "1.00x";
+    setResult("");
+
+    animate();
+}
+
+// CASH OUT ---------------------------------------------------------------
+function cashOut() {
+    if (!running || crashed || cashed) return;
+
+    cashed = true;
+    const profit = currentBet * (multiplier - 1);
+    updateBalance(currentBet + profit);
+
+    flash("#00c86f55"); // green glow
+    setResult("You cashed out at " + multiplier.toFixed(2) + "x");
+}
+
+// GRAPH + ANIMATION ---------------------------------------------------------
+function animate() {
+    if (!running) return;
+
+    if (!crashed && !cashed) {
+        multiplier += 0.003 + multiplier * 0.015;
+        if (Math.random() < 0.001 + multiplier * 0.0009) {
+            crashed = true;
+            crashPoint = multiplier;
+            flash("#ff2b2b55"); // red flash
+            setResult("Crashed at " + multiplier.toFixed(2) + "x");
+        }
+    }
+
+    document.getElementById("crashMultiplier").innerText =
+        multiplier.toFixed(2) + "x";
+
+    graphPoints.push(multiplier);
+
+    drawGraph();
+
+    if (crashed || cashed) {
+        running = false;
+        return;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+// DRAW GRAPH LINE ----------------------------------------------------------
+function drawGraph() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#2d5cff";
+
+    for (let i = 0; i < graphPoints.length; i++) {
+        let x = i * 6;
+        let y = canvas.height - graphPoints[i] * 12;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+
+    // crash dot
+    if (crashed) {
+        const x = graphPoints.length * 6;
+        const y = canvas.height - crashPoint * 12;
+
+        ctx.fillStyle = "#ff3b3b";
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}
+
+// SCREEN FLASH -------------------------------------------------------------
+function flash(color) {
+    canvas.style.boxShadow = `0 0 35px ${color}`;
+    setTimeout(() => (canvas.style.boxShadow = "none"), 500);
+}
+
+// INIT CANVAS --------------------------------------------------------------
+function setup() {
+    canvas = document.getElementById("crashCanvas");
+    ctx = canvas.getContext("2d");
+
+    canvas.width = 800;
+    canvas.height = 400;
+
+    loadBalance();
+}
+
+setup();
+</script>
+
+<style>
+.crash-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+#crashCanvas {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.crash-multi {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    font-size: 44px;
+    font-weight: 700;
+    color: #2d5cff;
+    text-shadow: 0 0 8px rgba(45,92,255,0.7);
+}
+</style>
+
+</body>
+</html>
